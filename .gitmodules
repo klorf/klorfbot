@@ -1,3 +1,0 @@
-[submodule "goirc"]
-	path = vendor/goirc
-	url = git@github.com:klorf/goirc.git
