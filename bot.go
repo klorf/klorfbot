@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	irc "github.com/klorf/klorfbot/vendor/goirc/client"
+	irc "github.com/klorf/goirc/client"
 )
 
 func main() {
