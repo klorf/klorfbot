@@ -14,6 +14,8 @@ import (
 	irc "github.com/klorf/goirc/client"
 )
 
+type Channel string
+type Message string
 type Klorf struct {
 	Logger  string `json:"logger"`
 	Channel string `json:"channel"`
@@ -58,8 +60,8 @@ func (k *Klorf) Roll(conn *irc.Conn, line *irc.Line) {
 	if matched {
 		msg = fmt.Sprintf("%s:%s", line.Nick, msg)
 
-		chanLog := string(line.Args[0][1:])
-		k.logToFile(chanLog, msg, line.Time)
+		chanLog := Channel(string(line.Args[0][1:]))
+		k.logToFile(chanLog, Message(msg), line.Time)
 
 		conn.Privmsg(c, msg)
 	}
@@ -68,8 +70,8 @@ func (k *Klorf) Roll(conn *irc.Conn, line *irc.Line) {
 func (k *Klorf) Log(conn *irc.Conn, line *irc.Line) {
 	entry := fmt.Sprintf("%s: %s", line.Nick, line.Args[1])
 
-	c := string(line.Args[0][1:])
-	k.logToFile(c, entry, line.Time)
+	c := Channel(string(line.Args[0][1:]))
+	k.logToFile(c, Message(entry), line.Time)
 }
 
 func (k *Klorf) Joined(conn *irc.Conn, line *irc.Line) {
@@ -80,8 +82,8 @@ func (k *Klorf) Joined(conn *irc.Conn, line *irc.Line) {
 		}
 	}
 
-	c := string(line.Args[0][1:])
-	k.logToFile(c, fmt.Sprintf("%s joined %s", line.Nick, line.Args[0]), line.Time)
+	c := Channel(string(line.Args[0][1:]))
+	k.logToFile(c, Message(fmt.Sprintf("%s joined %s", line.Nick, line.Args[0])), line.Time)
 }
 
 func (k *Klorf) runRoll(in []string, r *rand.Rand) (string, error) {
@@ -123,7 +125,7 @@ func (k *Klorf) runRoll(in []string, r *rand.Rand) (string, error) {
 	return msg, err
 }
 
-func (k *Klorf) logToFile(c, m string, t time.Time) {
+func (k *Klorf) logToFile(c Channel, m Message, t time.Time) {
 	if fmt.Sprintf("%q", c[0]) == "'#'" {
 		c = c[1:]
 	}
