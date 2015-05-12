@@ -29,6 +29,8 @@ func main() {
 	c.HandleFunc("privmsg", k.Log)
 	c.HandleFunc("privmsg", k.Roll)
 
+	c.HandleFunc("join", k.Joined)
+
 	if err := c.Connect(); err != nil {
 		fmt.Printf("Connection error: %s\n", err)
 	}
