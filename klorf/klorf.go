@@ -59,12 +59,7 @@ func (k *Klorf) Roll(conn *irc.Conn, line *irc.Line) {
 		msg = fmt.Sprintf("%s:%s", line.Nick, msg)
 
 		chanLog := string(line.Args[0][1:])
-		if fmt.Sprintf("%q", chanLog[0]) == "'#'" {
-			chanLog = chanLog[1:]
-		}
-
-		f := fmt.Sprintf("%s%s_%d-%d-%d.txt", k.Logger, chanLog, line.Time.Year(), line.Time.Month(), line.Time.Day())
-		k.logToFile(f, msg)
+		k.logToFile(chanLog, msg, line.Time)
 
 		conn.Privmsg(c, msg)
 	}
@@ -74,12 +69,19 @@ func (k *Klorf) Log(conn *irc.Conn, line *irc.Line) {
 	entry := fmt.Sprintf("%s: %s", line.Nick, line.Args[1])
 
 	c := string(line.Args[0][1:])
-	if fmt.Sprintf("%q", c[0]) == "'#'" {
-		c = c[1:]
+	k.logToFile(c, entry, line.Time)
+}
+
+func (k *Klorf) Joined(conn *irc.Conn, line *irc.Line) {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	if line.Args[0] == "#klorf" && (line.Nick == "debnath" || line.Nick == "debtNath") {
+		if r.Intn(101)+1 > 89 {
+			conn.Privmsg(line.Args[0], fmt.Sprintf("%s: Roll for Perception!", line.Nick))
+		}
 	}
 
-	f := fmt.Sprintf("%s%s_%d-%d-%d.txt", k.Logger, c, line.Time.Year(), line.Time.Month(), line.Time.Day())
-	k.logToFile(f, entry)
+	c := string(line.Args[0][1:])
+	k.logToFile(c, fmt.Sprintf("%s joined %s", line.Nick, line.Args[0]), line.Time)
 }
 
 func (k *Klorf) runRoll(in []string, r *rand.Rand) (string, error) {
@@ -121,7 +123,12 @@ func (k *Klorf) runRoll(in []string, r *rand.Rand) (string, error) {
 	return msg, err
 }
 
-func (k *Klorf) logToFile(f, m string) {
+func (k *Klorf) logToFile(c, m string, t time.Time) {
+	if fmt.Sprintf("%q", c[0]) == "'#'" {
+		c = c[1:]
+	}
+
+	f := fmt.Sprintf("%s%s_%d-%d-%d.txt", k.Logger, c, t.Year(), t.Month(), t.Day())
 	fh, _ := os.OpenFile(f, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0775)
 	defer fh.Close()
 
