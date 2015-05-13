@@ -14,8 +14,6 @@ import (
 	irc "github.com/klorf/goirc/client"
 )
 
-type Channel string
-type Message string
 type Klorf struct {
 	Logger  string `json:"logger"`
 	Channel string `json:"channel"`
@@ -60,8 +58,8 @@ func (k *Klorf) Roll(conn *irc.Conn, line *irc.Line) {
 	if matched {
 		msg = fmt.Sprintf("%s:%s", line.Nick, msg)
 
-		chanLog := Channel(string(line.Args[0][1:]))
-		k.logToFile(chanLog, Message(msg), line.Time)
+		chanLog := string(line.Args[0][1:])
+		k.logToFile(chanLog, msg, line.Time)
 
 		conn.Privmsg(c, msg)
 	}
@@ -70,8 +68,8 @@ func (k *Klorf) Roll(conn *irc.Conn, line *irc.Line) {
 func (k *Klorf) Log(conn *irc.Conn, line *irc.Line) {
 	entry := fmt.Sprintf("%s: %s", line.Nick, line.Args[1])
 
-	c := Channel(string(line.Args[0][1:]))
-	k.logToFile(c, Message(entry), line.Time)
+	c := string(line.Args[0][1:])
+	k.logToFile(c, entry, line.Time)
 }
 
 func (k *Klorf) Joined(conn *irc.Conn, line *irc.Line) {
@@ -82,8 +80,8 @@ func (k *Klorf) Joined(conn *irc.Conn, line *irc.Line) {
 		}
 	}
 
-	c := Channel(string(line.Args[0][1:]))
-	k.logToFile(c, Message(fmt.Sprintf("%s joined %s", line.Nick, line.Args[0])), line.Time)
+	c := string(line.Args[0][1:])
+	k.logToFile(c, fmt.Sprintf("%s joined %s", line.Nick, line.Args[0]), line.Time)
 }
 
 func (k *Klorf) runRoll(in []string, r *rand.Rand) (string, error) {
@@ -125,17 +123,17 @@ func (k *Klorf) runRoll(in []string, r *rand.Rand) (string, error) {
 	return msg, err
 }
 
-func (k *Klorf) logToFile(c Channel, m Message, t time.Time) {
-	if fmt.Sprintf("%q", c[0]) == "'#'" {
-		c = c[1:]
+func (k *Klorf) logToFile(channel, message string, t time.Time) {
+	if fmt.Sprintf("%q", channel[0]) == "'#'" {
+		channel = channel[1:]
 	}
 
-	f := fmt.Sprintf("%s%s_%d-%d-%d.txt", k.Logger, c, t.Year(), t.Month(), t.Day())
+	f := fmt.Sprintf("%s%s_%d-%d-%d.txt", k.Logger, channel, t.Year(), t.Month(), t.Day())
 	fh, _ := os.OpenFile(f, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0775)
 	defer fh.Close()
 
 	lfile := log.New(fh, "", log.LstdFlags)
-	lfile.Println(m)
+	lfile.Println(message)
 }
 
 func tokens(m string) []string {
