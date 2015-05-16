@@ -37,7 +37,7 @@ func (k *Klorf) Roll(conn *irc.Conn, line *irc.Line) {
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	m := tokens(line.Args[1])
-	d := regexp.MustCompile(`(\d+)d(\d+)([\-\+\*\/]?)(\d*)`)
+	d := regexp.MustCompile(`\b(\d+)d(\d+)([\-\+\*\/]?)(\d*)`)
 	msg := ""
 	matched := false
 
