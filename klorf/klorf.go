@@ -49,7 +49,11 @@ func (k *Klorf) Roll(conn *irc.Conn, line *irc.Line) {
 			if err != nil {
 				conn.Privmsg(c, fmt.Sprintf("%s: %s", line.Nick, err.Error()))
 			}
-			msg = fmt.Sprintf("%s %s", msg, roll)
+			if roll != "" {
+				msg = fmt.Sprintf("%s %s", msg, roll)
+			} else {
+				msg = fmt.Sprintf("%s %s", msg, y)
+			}
 		} else {
 			msg = fmt.Sprintf("%s %s", msg, y)
 		}
@@ -93,13 +97,12 @@ func (k *Klorf) runRoll(in []string, r *rand.Rand) (string, error) {
 	if diceCount < 1 {
 		return "", errors.New("Too little die")
 	} else if diceCount > 30 {
-		err = errors.New("Setting maximum die to 30")
 		diceCount = 30
 	}
 
 	diceType, _ := strconv.Atoi(in[2])
-	if diceType < 4 || diceType > 20 || diceType%2 != 0 {
-		return "", errors.New("Invalid dice type")
+	if (diceType != 2 && diceType != 100) && (diceType < 4 || diceType > 20 || diceType%2 != 0) {
+		return "", nil
 	}
 
 	for i := 0; i < diceCount; i++ {
