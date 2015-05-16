@@ -37,7 +37,7 @@ func (k *Klorf) Roll(conn *irc.Conn, line *irc.Line) {
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	m := tokens(line.Args[1])
-	d := regexp.MustCompile(`(\d+)d(\d+)([\-\+\*\/]?)(\d*)`)
+	d := regexp.MustCompile(`\b(\d+)d(\d+)([\-\+\*\/]?)(\d*)`)
 	msg := ""
 	matched := false
 
@@ -49,7 +49,11 @@ func (k *Klorf) Roll(conn *irc.Conn, line *irc.Line) {
 			if err != nil {
 				conn.Privmsg(c, fmt.Sprintf("%s: %s", line.Nick, err.Error()))
 			}
-			msg = fmt.Sprintf("%s %s", msg, roll)
+			if roll != "" {
+				msg = fmt.Sprintf("%s %s", msg, roll)
+			} else {
+				msg = fmt.Sprintf("%s %s", msg, y)
+			}
 		} else {
 			msg = fmt.Sprintf("%s %s", msg, y)
 		}
@@ -93,13 +97,12 @@ func (k *Klorf) runRoll(in []string, r *rand.Rand) (string, error) {
 	if diceCount < 1 {
 		return "", errors.New("Too little die")
 	} else if diceCount > 30 {
-		err = errors.New("Setting maximum die to 30")
 		diceCount = 30
 	}
 
 	diceType, _ := strconv.Atoi(in[2])
-	if diceType < 4 || diceType > 20 || diceType%2 != 0 {
-		return "", errors.New("Invalid dice type")
+	if (diceType != 2 && diceType != 100) && (diceType < 4 || diceType > 20 || diceType%2 != 0) {
+		return "", nil
 	}
 
 	for i := 0; i < diceCount; i++ {
@@ -123,17 +126,17 @@ func (k *Klorf) runRoll(in []string, r *rand.Rand) (string, error) {
 	return msg, err
 }
 
-func (k *Klorf) logToFile(c, m string, t time.Time) {
-	if fmt.Sprintf("%q", c[0]) == "'#'" {
-		c = c[1:]
+func (k *Klorf) logToFile(channel, message string, t time.Time) {
+	if fmt.Sprintf("%q", channel[0]) == "'#'" {
+		channel = channel[1:]
 	}
 
-	f := fmt.Sprintf("%s%s_%d-%d-%d.txt", k.Logger, c, t.Year(), t.Month(), t.Day())
+	f := fmt.Sprintf("%s%s_%d-%d-%d.txt", k.Logger, channel, t.Year(), t.Month(), t.Day())
 	fh, _ := os.OpenFile(f, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0775)
 	defer fh.Close()
 
 	lfile := log.New(fh, "", log.LstdFlags)
-	lfile.Println(m)
+	lfile.Println(message)
 }
 
 func tokens(m string) []string {
