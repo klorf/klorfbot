@@ -15,8 +15,8 @@ import (
 )
 
 type Klorf struct {
-	Logger  string `json:"logger"`
-	Channel string `json:"channel"`
+	Logger   string     `json:"logger"`
+	Channels []*Channel `json:"channels"`
 }
 
 func NewKlorf() *Klorf {
@@ -78,14 +78,56 @@ func (k *Klorf) Log(conn *irc.Conn, line *irc.Line) {
 
 func (k *Klorf) Joined(conn *irc.Conn, line *irc.Line) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	if line.Args[0] == "#klorf" && (line.Nick == "debnath" || line.Nick == "debtNath") {
+	if line.Args[0] == "#klorf" && (line.Nick == "debnath" || line.Nick == "debtNath" || line.Nick == "debnath1") {
 		if r.Intn(101)+1 > 89 {
 			conn.Privmsg(line.Args[0], fmt.Sprintf("%s: Roll for Perception!", line.Nick))
 		}
 	}
 
+	for _, i := range k.Channels {
+		if i.Channel == line.Args[0] {
+			i.Add(line.Nick)
+		}
+	}
+
 	c := string(line.Args[0][1:])
 	k.logToFile(c, fmt.Sprintf("%s joined %s", line.Nick, line.Args[0]), line.Time)
+}
+
+func (k *Klorf) Parted(conn *irc.Conn, line *irc.Line) {
+	for _, i := range k.Channels {
+		if i.Channel == line.Args[0] {
+			i.Remove(line.Nick)
+		}
+	}
+
+	k.logToFile(line.Args[0][1:], fmt.Sprintf("%s %s %s", line.Nick, strings.ToLower(line.Cmd), line.Args[0]), line.Time)
+}
+
+func (k *Klorf) Quit(conn *irc.Conn, line *irc.Line) {
+	for _, i := range k.Channels {
+		fmt.Println(i.Channel, i.HasUser(line.Nick))
+
+		if i.HasUser(line.Nick) {
+			i.Remove(line.Nick)
+
+			k.logToFile(i.Channel, fmt.Sprintf("%s has quit.", line.Nick), line.Time)
+		}
+	}
+}
+
+func (k *Klorf) List(conn *irc.Conn, line *irc.Line) {
+	var c *Channel
+	for _, i := range k.Channels {
+		if i.Channel == line.Args[2] {
+			c = i
+			break
+		}
+	}
+
+	for _, nick := range line.Args[3:] {
+		c.Add(nick)
+	}
 }
 
 func (k *Klorf) runRoll(in []string, r *rand.Rand) (string, error) {
@@ -127,8 +169,12 @@ func (k *Klorf) runRoll(in []string, r *rand.Rand) (string, error) {
 }
 
 func (k *Klorf) logToFile(channel, message string, t time.Time) {
-	if fmt.Sprintf("%q", channel[0]) == "'#'" {
-		channel = channel[1:]
+	for {
+		if fmt.Sprintf("%q", channel[0]) == "'#'" {
+			channel = channel[1:]
+		} else {
+			break
+		}
 	}
 
 	f := fmt.Sprintf("%s%s_%d-%d-%d.txt", k.Logger, channel, t.Year(), t.Month(), t.Day())

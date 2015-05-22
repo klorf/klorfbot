@@ -9,6 +9,10 @@ import (
 	irc "github.com/klorf/goirc/client"
 )
 
+var (
+	k *klorf.Klorf
+)
+
 func main() {
 	cfg := irc.NewConfig("klorfbot")
 	cfg.SSL = true
@@ -18,10 +22,9 @@ func main() {
 	cfg.Me.Name = "klorfbot"
 
 	log := os.Getenv("KLORF_LOGFILE")
-	k := klorf.New(log)
+	k = klorf.New(log)
 
 	c := irc.Client(cfg)
-	c.HandleFunc("connected", connect)
 
 	quit := make(chan bool)
 	c.HandleFunc("disconnected", func(conn *irc.Conn, line *irc.Line) { quit <- true })
@@ -30,6 +33,11 @@ func main() {
 	c.HandleFunc("privmsg", k.Roll)
 
 	c.HandleFunc("join", k.Joined)
+	c.HandleFunc("part", k.Parted)
+	c.HandleFunc("quit", k.Quit)
+
+	c.HandleFunc("353", k.List)
+	c.HandleFunc("connected", connect)
 
 	if err := c.Connect(); err != nil {
 		fmt.Printf("Connection error: %s\n", err)
@@ -38,13 +46,16 @@ func main() {
 	<-quit
 }
 
+func debug(conn *irc.Conn, line *irc.Line) {
+	fmt.Println(line)
+}
+
 func connect(conn *irc.Conn, line *irc.Line) {
 	p := os.Getenv("KLORF_PASS")
 	conn.Privmsg("NickServ", fmt.Sprintf("IDENTIFY %s", p))
 
 	c := os.Getenv("KLORF_CHANS")
 	for _, x := range strings.Split(c, ":") {
-		conn.Join(x)
-		conn.Privmsg(x, "klorf klorf klorf")
+		k.Join(conn, x)
 	}
 }
