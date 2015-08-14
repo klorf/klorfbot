@@ -106,8 +106,6 @@ func (k *Klorf) Parted(conn *irc.Conn, line *irc.Line) {
 
 func (k *Klorf) Quit(conn *irc.Conn, line *irc.Line) {
 	for _, i := range k.Channels {
-		fmt.Println(i.Channel, i.HasUser(line.Nick))
-
 		if i.HasUser(line.Nick) {
 			i.Remove(line.Nick)
 
