@@ -14,6 +14,7 @@ var (
 )
 
 func main() {
+	// begin the configuration to drive the connection
 	cfg := irc.NewConfig("klorfbot")
 	cfg.SSL = true
 	cfg.Server = "morgan.freenode.net:6697"
@@ -21,16 +22,19 @@ func main() {
 	cfg.Me.Ident = "klorfbot"
 	cfg.Me.Name = "klorfbot"
 
+	// this is actually a directory
 	log := os.Getenv("KLORF_LOGFILE")
 	k = klorf.New(log)
 
 	c := irc.Client(cfg)
 
+	// define each handler and assign
 	quit := make(chan bool)
 	c.HandleFunc("disconnected", func(conn *irc.Conn, line *irc.Line) { quit <- true })
 
 	c.HandleFunc("privmsg", k.Log)
 	c.HandleFunc("privmsg", k.Roll)
+	c.HandleFunc("privmsg", k.Robot)
 
 	c.HandleFunc("join", k.Joined)
 	c.HandleFunc("part", k.Parted)
