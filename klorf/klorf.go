@@ -94,6 +94,20 @@ func (k *Klorf) Joined(conn *irc.Conn, line *irc.Line) {
 	k.logToFile(c, fmt.Sprintf("%s joined %s", line.Nick, line.Args[0]), line.Time)
 }
 
+func (k *Klorf) Robot(conn *irc.Conn, line *irc.Line) {
+	var msg string
+
+	for _, i := range k.Channels {
+		if i.Channel == line.Args[0] {
+			msg = i.Robot(line)
+		}
+	}
+
+	if len(msg) > 0 {
+		conn.Privmsg(line.Args[0], msg)
+	}
+}
+
 func (k *Klorf) Parted(conn *irc.Conn, line *irc.Line) {
 	for _, i := range k.Channels {
 		if i.Channel == line.Args[0] {

@@ -34,6 +34,7 @@ func main() {
 
 	c.HandleFunc("privmsg", k.Log)
 	c.HandleFunc("privmsg", k.Roll)
+	c.HandleFunc("privmsg", k.Robot)
 
 	c.HandleFunc("join", k.Joined)
 	c.HandleFunc("part", k.Parted)
